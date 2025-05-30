@@ -1206,3 +1206,24 @@ public static class EnumUtil
         return Enum.GetValues(typeof(T)).Cast<T>();
     }
 }
+
+// Extend markers in OverlayMap
+public void DrawMap()
+{
+    DrawStaticMarkers();
+
+    if (config.GetBool("EnablePortalMarkers"))
+    {
+        DrawPortalMarkers();
+    }
+
+    if (config.GetBool("EnableMerchantMarkers"))
+    {
+        DrawMerchantMarkers();
+    }
+
+    if (config.GetBool("EnableHuntingGroundMarkers"))
+    {
+        DrawHuntingGroundMarkers();
+    }
+}

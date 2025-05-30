@@ -323,3 +323,20 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
         }
     }
 }
+
+// Add toggles and multipliers in the AdjustCosts method
+public void AdjustCosts()
+{
+    var config = SingletonMonoBehaviour<Managers>.Inst.config;
+
+    if (config.GetBool("EnableMonolithAdjustments"))
+    {
+        AdjustMonolithCosts();
+    }
+
+    float multiplier = config.GetFloat("UpgradeCostMultiplier", 1.0f);
+    foreach (var upgrade in upgrades)
+    {
+        upgrade.cost *= multiplier;
+    }
+}
