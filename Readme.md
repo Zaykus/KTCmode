@@ -61,6 +61,8 @@ KingdomMod is installed using the `BepInEx` mod loader. Follow these steps:
 - `F5`: Reload game.
 - `F8`: Save game.
 - `N`: Show/hide stamina bar.
+- `LeftShift + F7` : Infinite Stamina.
+- `LeftShift + F8` : Faster Mount Speed.
 
 ---
 
