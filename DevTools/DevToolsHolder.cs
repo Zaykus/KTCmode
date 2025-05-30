@@ -677,3 +677,17 @@ public class DevToolsHolder : MonoBehaviour
     }
 
 }
+
+// Add cheats logic
+public void EnableCheats()
+{
+    if (config.GetBool("InfiniteStamina"))
+    {
+        player.stamina = float.MaxValue;
+    }
+
+    if (config.GetBool("FasterMountSpeed"))
+    {
+        player.mount.speed *= 2;
+    }
+}
