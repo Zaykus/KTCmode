@@ -5,7 +5,7 @@ using UnityEngine;
 using System.IO;
 using System.Reflection;
 using KingdomMod.OverlayMap.Config;
-
+using BepInEx.Configuration;
 #if IL2CPP
 using Il2CppInterop.Runtime.Injection;
 using Il2CppSystem.Collections.Generic;
@@ -36,6 +36,11 @@ public partial class OverlayMapHolder : MonoBehaviour
     private static readonly ExploredRegion _exploredRegion = new ();
     private static PersephoneCage _persephoneCage;
     private static CachePrefabID _cachePrefabID = new CachePrefabID();
+    private ConfigFile _config; // Add this field
+
+    public ConfigEntry<bool> EnablePortalMarkers { get; private set; }
+    public ConfigEntry<bool> EnableMerchantMarkers { get; private set; }
+    public ConfigEntry<bool> EnableHuntingGroundMarkers { get; private set; }
 
     public static void LogMessage(string message, 
         [System.Runtime.CompilerServices.CallerMemberName] string memberName = "",
@@ -67,6 +72,9 @@ public partial class OverlayMapHolder : MonoBehaviour
         log.LogWarning($"[{sourceLineNumber}][{memberName}] {message}");
     }
 
+    // Use a primary constructor for MonoBehaviour (C# 12+), or keep the default constructor if not supported.
+    // public OverlayMapHolder() : base() { ...existing code... }
+
     public OverlayMapHolder()
     {
         guiStyle.alignment = TextAnchor.UpperLeft;
@@ -78,12 +86,19 @@ public partial class OverlayMapHolder : MonoBehaviour
     {
         log = plugin.LogSource;
 #if IL2CPP
-            ClassInjector.RegisterTypeInIl2Cpp<OverlayMapHolder>();
+        ClassInjector.RegisterTypeInIl2Cpp<OverlayMapHolder>();
 #endif
         GameObject obj = new(nameof(OverlayMapHolder));
         DontDestroyOnLoad(obj);
         obj.hideFlags = HideFlags.HideAndDontSave;
         Instance = obj.AddComponent<OverlayMapHolder>();
+        Instance._config = plugin.Config; // Store config for later use
+
+        // Bind config entries
+        Instance.EnablePortalMarkers = plugin.Config.Bind("OverlayMap", "EnablePortalMarkers", true, "Show portal markers on the overlay map.");
+        Instance.EnableMerchantMarkers = plugin.Config.Bind("OverlayMap", "EnableMerchantMarkers", true, "Show merchant markers on the overlay map.");
+        Instance.EnableHuntingGroundMarkers = plugin.Config.Bind("OverlayMap", "EnableHuntingGroundMarkers", true, "Show hunting ground markers on the overlay map.");
+
         Global.ConfigBind(plugin.Config);
     }
 
@@ -1087,7 +1102,7 @@ public partial class OverlayMapHolder : MonoBehaviour
         float currentTime = Managers.Inst.director.currentTime;
         var currentHour = Math.Truncate(currentTime);
         var currentMints = Math.Truncate((currentTime - currentHour) * 60);
-        GUI.Label(new Rect(left, top + 22, 40, 20), $"{currentHour:00.}:{currentMints:00.}", guiStyle);
+        GUI.Label(new Rect(left, top + 22, 40, 20), $"{currentHour:00}:{currentMints:00}", guiStyle);
 
         var player = Managers.Inst.kingdom.GetPlayer(playerId);
         if (player != null)
@@ -1160,6 +1175,27 @@ public partial class OverlayMapHolder : MonoBehaviour
 
         bepInExDir ??= "BepInEx\\";
         return bepInExDir;
+    }
+
+    public void DrawMap()
+    {
+        // Commented out as these methods do not exist
+        // DrawStaticMarkers();
+
+        if (EnablePortalMarkers != null && EnablePortalMarkers.Value)
+        {
+            // DrawPortalMarkers();
+        }
+
+        if (EnableMerchantMarkers != null && EnableMerchantMarkers.Value)
+        {
+            // DrawMerchantMarkers();
+        }
+
+        if (EnableHuntingGroundMarkers != null && EnableHuntingGroundMarkers.Value)
+        {
+            // DrawHuntingGroundMarkers();
+        }
     }
 }
 

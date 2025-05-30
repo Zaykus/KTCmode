@@ -6,6 +6,7 @@ using File = System.IO.File;
 using HarmonyLib;
 using Coatsink.Common;
 using System.Reflection;
+using BepInEx.Configuration;
 #if IL2CPP
 using Il2CppInterop.Runtime.Injection;
 #endif
@@ -23,6 +24,11 @@ public class DevToolsHolder : MonoBehaviour
     private readonly List<ObjectsInfo> objectsInfoList = new();
     private static Texture2D ColoredTexture2D = null;
     private static readonly GUIStyle boxGuiStyle = new();
+    private ConfigFile _config; // Add this field
+
+    // Example: these should be assigned in your config binding logic
+    public BepInEx.Configuration.ConfigEntry<bool> InfiniteStamina;
+    public BepInEx.Configuration.ConfigEntry<bool> FasterMountSpeed;
 
     public static void Initialize(DevToolsPlugin plugin)
     {
@@ -34,6 +40,7 @@ public class DevToolsHolder : MonoBehaviour
         DontDestroyOnLoad(obj);
         obj.hideFlags = HideFlags.HideAndDontSave;
         Instance = obj.AddComponent<DevToolsHolder>();
+        Instance._config = plugin.Config; // Store config for later use
     }
 
     public DevToolsHolder()
@@ -78,87 +85,12 @@ public class DevToolsHolder : MonoBehaviour
             }
 #endif
 
-        // [HarmonyPatch(typeof(UnityEngine.DebugLogHandler), nameof(DebugLogHandler.Internal_Log))]
-        // public class DebugLogHandlerPatcher
-        // {
-        //     public static void Postfix(LogType level, LogOption options, string msg, UnityEngine.Object obj)
-        //     {
-        //         log.LogMessage(msg);
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.Log), new Type[] { typeof(Il2CppSystem.Object) })]
-        // public class DebugLogPatcher
-        // {
-        //     public static void Postfix(Il2CppSystem.Object message)
-        //     {
-        //         log.LogMessage(message.ToString());
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.LogFormat), new Type[]{ typeof(string), typeof(Il2CppSystem.Object[]) })]
-        // public class DebugLogFormatPatcher
-        // {
-        //     public static void Postfix(string format, params Il2CppSystem.Object[] args)
-        //     {
-        //         log.LogMessage(format);
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.LogWarningFormat), new Type[] { typeof(string), typeof(Il2CppSystem.Object[]) })]
-        // public class DebugLogWarningFormatPatcher
-        // {
-        //     public static void Postfix(string format, params Il2CppSystem.Object[] args)
-        //     {
-        //         log.LogMessage(format);
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.LogWarningFormat),
-        //     new Type[] { typeof(UnityEngine.Object), typeof(string), typeof(Il2CppSystem.Object[]) })]
-        // public class DebugLogWarningFormatPatcher01
-        // {
-        //     public static void Postfix(UnityEngine.Object context, string format, params Il2CppSystem.Object[] args)
-        //     {
-        //         log.LogMessage(format);
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.LogWarningFormat),
-        //     new Type[] { typeof(UnityEngine.Object), typeof(string), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
-        // public class DebugLogWarningFormatPatcher02
-        // {
-        //     public static void Postfix(string format, [Optional] Il2CppReferenceArray<Il2CppSystem.Object> args)
-        //     {
-        //         log.LogMessage(format);
-        //
-        //     }
-        // }
-        //
-        // [HarmonyPatch(typeof(UnityEngine.Debug), nameof(UnityEngine.Debug.LogWarningFormat),
-        //     new Type[] { typeof(UnityEngine.Object), typeof(string), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
-        // public class DebugLogWarningFormatPatcher03
-        // {
-        //     public static void Postfix(UnityEngine.Object context, string format, [Optional] Il2CppReferenceArray<Il2CppSystem.Object> args)
-        //     {
-        //         log.LogMessage(format);
-        //
-        //     }
-        // }
-
         [HarmonyPatch(typeof(UnityEngine.TextGenerator), "ValidatedSettings")]
         public class TextGeneratorValidatedSettingsPatcher
         {
             public static bool Prefix(ref TextGenerationSettings __result, TextGenerationSettings settings)
             {
                 if (settings.font == null) return true;
-
-                // log.LogMessage($"fontNames: {string.Join(", ", settings.font.fontNames)}, {settings.font.fontSize}, {settings.font.dynamic}, {settings.fontSize}, {settings.fontStyle}, {settings.resizeTextForBestFit}");
 
                 if (settings.font.dynamic == false)
                 {
@@ -188,7 +120,8 @@ public class DevToolsHolder : MonoBehaviour
 
     private void Update()
     {
-// #if DEBUG
+        var player = GetLocalPlayer(); 
+
         if (Input.GetKeyDown(KeyCode.Home))
         {
             log.LogMessage("Home key pressed.");
@@ -281,7 +214,6 @@ public class DevToolsHolder : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Delete))
         {
-            var player = GetLocalPlayer();
             if (player != null)
             {
                 var payable = player.selectedPayable;
@@ -305,7 +237,6 @@ public class DevToolsHolder : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            var player = GetLocalPlayer();
             if (player != null)
             {
                 log.LogMessage($"Try to add Peasant.");
@@ -319,7 +250,6 @@ public class DevToolsHolder : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F2))
         {
-            var player = GetLocalPlayer();
             if (player != null)
             {
                 log.LogMessage($"Try to add Griffin.");
@@ -332,43 +262,29 @@ public class DevToolsHolder : MonoBehaviour
             }
         }
 
-        // if (Input.GetKeyDown(KeyCode.F3))
-        // {
-        //     var player = GetLocalPlayer();
-        //     if (player != null)
-        //     {
-        //         log.LogMessage($"Try to add Wall0.");
-        //
-        //         // var prefab = Resources.Load<Wall>("prefabs/buildings and interactive/wall0");
-        //         Vector3 vector = new Vector3(player.transform.position.x, 0.0f, 0.1f);
-        //
-        //         Wall wall = Instantiate<Wall>(Managers.Inst.holder.wallPrefabs[0]);
-        //         wall.transform.SetParent(GameObject.FindGameObjectWithTag("GameLayer").transform);
-        //         wall.transform.position = vector;
-        //
-        //         // var lastSpawned = Pool.SpawnOrInstantiateGO(prefab.gameObject, vector, Quaternion.identity, GameObject.FindGameObjectWithTag("GameLayer").transform);
-        //         // lastSpawned.transform.SetParent(GameObject.FindGameObjectWithTag("GameLayer").transform);
-        //     }
-        // }
-        //
-        // if (Input.GetKeyDown(KeyCode.F4))
-        // {
-        //     var player = GetLocalPlayer();
-        //     if (player != null)
-        //     {
-        //         log.LogMessage($"Try to add Tower0.");
-        //
-        //         // var prefab = Resources.Load<Tower>("prefabs/buildings and interactive/tower0");
-        //
-        //         var prefab = Managers.Inst.prefabs.GetPrefabById((int)GamePrefabID.Tower0);
-        //         prefab.GetComponent<PayableUpgrade>().nextPrefab = Managers.Inst.prefabs.GetPrefabById((int)GamePrefabID.Tower2);
-        //
-        //         Vector3 vector = new Vector3(player.transform.position.x, 0.0f, 1.6f);
-        //         var lastSpawned = Pool.SpawnOrInstantiateGO(prefab.gameObject, vector, Quaternion.identity,
-        //             GameObject.FindGameObjectWithTag("GameLayer").transform);
-        //         // lastSpawned.transform.SetParent(GameObject.FindGameObjectWithTag("GameLayer").transform);
-        //     }
-        // }
+        // Changed hotkey to LeftShift + F7
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F7))
+        {
+            log.LogMessage($"LeftShift + F7 pressed. Toggling Infinite Stamina.");
+            if (InfiniteStamina != null)
+            {
+                InfiniteStamina.Value = !InfiniteStamina.Value;
+                log.LogMessage($"Infinite Stamina: {InfiniteStamina.Value}");
+                EnableCheats(); 
+            }
+        }
+
+        // Changed hotkey to LeftShift + F8
+        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.F8))
+        {
+            log.LogMessage($"LeftShift + F8 pressed. Toggling Faster Mount Speed.");
+            if (FasterMountSpeed != null)
+            {
+                FasterMountSpeed.Value = !FasterMountSpeed.Value;
+                log.LogMessage($"Faster Mount Speed: {FasterMountSpeed.Value}");
+                EnableCheats(); 
+            }
+        }
 
         if (Input.GetKeyDown(KeyCode.F9))
         {
@@ -417,7 +333,6 @@ public class DevToolsHolder : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            var player = GetLocalPlayer();
             if (player != null)
             {
                 player.TeleportFlash();
@@ -445,7 +360,6 @@ public class DevToolsHolder : MonoBehaviour
                 Pool.Despawn(boulder, 5f);
             }
         }
-// #endif
 
         tick = tick + 1;
         if (tick > 60)
@@ -500,8 +414,6 @@ public class DevToolsHolder : MonoBehaviour
             if (obj.GetComponent<Monument>()) continue;
             if (obj.GetComponent<Fish>()) continue;
             if (obj.GetComponent<Parallax2DChild>()) continue;
-            // if (obj.GetComponent<Rigidbody2D>()) continue;
-            // if (obj.GetComponent<PolygonCollider2D>()) continue;
             if (obj.GetComponent<WorkableTree>()) continue;
 
             if (obj.name.StartsWith("Haze")) continue;
@@ -519,7 +431,6 @@ public class DevToolsHolder : MonoBehaviour
             if (uiPos.x > 0 && uiPos.x < Screen.width && uiPos.y > 0 && uiPos.y < Screen.height)
             {
                 objectsInfoList.Add(new ObjectsInfo(new Rect(uiPos.x, uiPos.y, 100, 100), obj.transform.position, obj.name));
-                //  + " (" + obj.transform.position.ToString() + ")(" + uiPos.ToString() + ")"
                 log.LogInfo(obj.name);
             }
         }
@@ -531,19 +442,7 @@ public class DevToolsHolder : MonoBehaviour
         foreach (var obj in objectsInfoList)
         {
             GUI.Label(obj.Pos, obj.Info, guiStyle);
-            // var vecPos = obj.pos;
-            // vecPos.y += 20;
-            // GUI.Label(vecPos, obj.vec.x.ToString(), SpotMarkGUIStyle);
         }
-
-        // var dog = GameObject.FindObjectOfType<Dog>();
-        // if (!dog)
-        //     return;
-        //
-        // Vector3 dogScreenPos = worldCam.WorldToScreenPoint(dog.transform.position);
-        // Vector3 dogUiPos = new Vector3(dogScreenPos.x, Screen.height - dogScreenPos.y, 0);
-        // GUI.Label(new Rect(dogUiPos.x, dogUiPos.y, 100, 100), dog.name, SpotMarkGUIStyle);
-
     }
 
     private void DrawDebugInfo()
@@ -673,6 +572,25 @@ public class DevToolsHolder : MonoBehaviour
             this.Pos = pos;
             this.Vec = vec;
             this.Info = info;
+        }
+    }
+
+    public void EnableCheats()
+    {
+        var player = GetLocalPlayer();
+        if (player == null)
+            return;
+
+        if (InfiniteStamina != null && InfiniteStamina.Value)
+        {
+            if (player.steed != null)
+                player.steed.Stamina = float.MaxValue;
+        }
+
+        if (FasterMountSpeed != null && FasterMountSpeed.Value)
+        {
+            if (player.steed != null)
+                player.steed.runSpeed *= 2;
         }
     }
 

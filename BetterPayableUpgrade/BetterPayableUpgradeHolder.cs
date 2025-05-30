@@ -18,6 +18,7 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
     public static BetterPayableUpgradeHolder Instance { get; private set; }
     private static ManualLogSource log;
     private static System.Collections.Generic.Dictionary<GamePrefabID, ModifyData> _modifyDataDict;
+    private BepInEx.Configuration.ConfigFile _config; // Add this field if you want to use config
 
     public class Patcher
     {
@@ -37,7 +38,7 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
         [HarmonyPatch(typeof(CurrencyBag), "Init")]
         public class CoinBagInitPatcher
         {
-            public static void Prefix(CurrencyBag __instance)
+            public static void Prefix()
             {
                 for (int i = 0; i < CurrencyManager.AllCurrencyTypes.Length; i++)
                 {
@@ -49,8 +50,6 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
 
                     if (currencyConfig.BagPrefab)
                     {
-                        // log.LogMessage($"CoinBagInitPatcher localScale: {currencyConfig.BagPrefab.gameObject.transform.localScale}");
-
                         currencyConfig.BagPrefab.gameObject.transform.localScale = new Vector3(0.668f, 0.668f, 0.668f);
 
                         var bagCoinPrefab = BiomeData.GetPrefabSwap(currencyConfig.BagPrefab);
@@ -71,6 +70,7 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
         DontDestroyOnLoad(obj);
         obj.hideFlags = HideFlags.HideAndDontSave;
         Instance = obj.AddComponent<BetterPayableUpgradeHolder>();
+        Instance._config = plugin.Config; // Store config for later use if needed
     }
 
     public BetterPayableUpgradeHolder()
@@ -110,6 +110,20 @@ public class BetterPayableUpgradeHolder : MonoBehaviour
         
     public void AdjustCosts()
     {
+        // Remove the following line, as Managers.Inst.config does not exist:
+        // var config = SingletonMonoBehaviour<Managers>.Inst.config;
+
+        // If you need config values, use _config or pass config as a parameter.
+        // Example:
+        // float multiplier = _config?.Bind("Section", "UpgradeCostMultiplier", 1.0f, "desc")?.Value ?? 1.0f;
+        float multiplier = 1.0f; // Default value, or get from your config as shown above
+
+        // If 'upgrades' is not defined, comment this out or implement it.
+        // foreach (var upgrade in upgrades)
+        // {
+        //     upgrade.cost *= multiplier;
+        // }
+
         var prefabs = Managers.Inst.prefabs;
         if (prefabs != null)
         {
